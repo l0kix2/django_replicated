@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 
 import inspect
+import logging
 from functools import partial
 
 from django import db
@@ -11,6 +12,9 @@ from django.utils import six, functional
 
 from . import dbchecker
 from .utils import routers, get_object_name
+
+
+log = logging.getLogger(__name__)
 
 
 class ReplicationMiddleware(object):
@@ -34,12 +38,17 @@ class ReplicationMiddleware(object):
     def process_request(self, request):
         if self.forced_state is not None:
             state = self.forced_state
+            logging.debug('state by .forced_state attr: %s', state)
         elif request.META.get(settings.REPLICATED_FORCE_STATE_HEADER) in ('master', 'slave'):
             state = request.META[settings.REPLICATED_FORCE_STATE_HEADER]
+            logging.debug('state by header: %s', state)
         else:
             state = 'slave' if request.method in ['GET', 'HEAD'] else 'master'
+            logging.debug('state by request method: %s', state)
             state = self.check_state_override(request, state)
+            logging.debug('state after override: %s', state)
 
+        logging.debug('init state: %s', state)
         routers.init(state)
 
     def process_response(self, request, response):
@@ -79,6 +88,7 @@ class ReplicationMiddleware(object):
         '''
         force_master_codes = settings.REPLICATED_FORCE_MASTER_COOKIE_STATUS_CODES
         if response.status_code in force_master_codes and routers.state() == 'master':
+            logging.debug('set force master cookie for %s', request.path)
             self.set_force_master_cookie(response)
         else:
             if settings.REPLICATED_FORCE_MASTER_COOKIE_NAME in request.COOKIES:

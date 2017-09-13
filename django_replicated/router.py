@@ -1,8 +1,12 @@
 # coding: utf-8
 from __future__ import unicode_literals
 
+import logging
 import random
 from threading import local
+from .utils import timeit
+
+log = logging.getLogger(__name__)
 
 
 class ReplicationRouter(object):
@@ -36,6 +40,7 @@ class ReplicationRouter(object):
         self.reset()
         self.use_state(state)
 
+    @timeit
     def is_alive(self, db_name):
         from .dbchecker import db_is_alive
 
@@ -76,6 +81,7 @@ class ReplicationRouter(object):
 
         self.context.chosen['master'] = self.DEFAULT_DB_ALIAS
 
+        log.debug('db_for_write: %s', self.DEFAULT_DB_ALIAS)
         return self.DEFAULT_DB_ALIAS
 
     def db_for_read(self, model, **hints):
@@ -97,6 +103,7 @@ class ReplicationRouter(object):
 
         self.context.chosen[self.state()] = chosen
 
+        log.debug('db_for_read: %s', chosen)
         return chosen
 
     def allow_relation(self, obj1, obj2, **hints):

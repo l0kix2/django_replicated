@@ -2,6 +2,11 @@
 from __future__ import unicode_literals
 
 from django import db
+import datetime
+import functools
+import logging
+
+log = logging.getLogger(__name__)
 
 
 def get_object_name(obj):
@@ -21,3 +26,22 @@ class Routers(object):
 
 
 routers = Routers()
+
+
+def timeit(marker=None):
+    def decorator(func):
+        name = marker or func.__name__
+
+        @functools.wraps(func)
+        def wrapped(*args, **kwargs):
+            before = datetime.datetime.now()
+            msg = '%s executed in %d.%06d'
+            try:
+                return func(*args, **kwargs)
+            except Exception as exc:
+                msg += ' with exception %s %s' % (exc.__class__.__name__, exc)
+            finally:
+                passed = datetime.datetime.now() - before
+                logging.debug(msg, name, passed.seconds, passed.microseconds)
+        return wrapped
+    return decorator
