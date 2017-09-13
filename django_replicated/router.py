@@ -40,7 +40,7 @@ class ReplicationRouter(object):
         self.reset()
         self.use_state(state)
 
-    @timeit
+    @timeit()
     def is_alive(self, db_name):
         from .dbchecker import db_is_alive
 
