@@ -64,11 +64,21 @@ class ReplicationMiddleware(object):
                                      get_object_name(match.func))
 
             for lookup_view, forced_state in six.iteritems(overrides):
-                if match.url_name == lookup_view or import_path == lookup_view:
+                if (
+                    match.url_name == lookup_view or
+                    import_path == lookup_view or
+                    self._is_path_matched(request.path_info, lookup_view)
+                ):
                     state = forced_state
                     break
-
         return state
+
+    @staticmethod
+    def _is_path_matched(path_info, lookup):
+        if lookup.endswith('*'):
+            return path_info.startswith(lookup[:-len('*')])
+        else:
+            return path_info == lookup
 
     def handle_redirect_after_write(self, request, response):
         '''
